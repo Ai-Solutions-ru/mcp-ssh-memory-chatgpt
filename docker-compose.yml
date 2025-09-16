@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  factory:
+    build:
+      context: .
+    environment:
+      COOLIFY_API_URL: ${COOLIFY_API_URL}
+      COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN}
+      PROJECT_UUID: ${PROJECT_UUID}
+      # выберите одно из двух:
+      SERVER_UUID: ${SERVER_UUID}
+      # DESTINATION_UUID: ${DESTINATION_UUID}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      ENVIRONMENT_NAME: ${ENVIRONMENT_NAME:-production}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.factory.rule=Host(`${FACTORY_FQDN}`)
+      - traefik.http.routers.factory.entryPoints=websecure
+      - traefik.http.routers.factory.tls.certresolver=letsencrypt
+      - traefik.http.services.factory.loadbalancer.server.port=8080
+    restart: unless-stopped
