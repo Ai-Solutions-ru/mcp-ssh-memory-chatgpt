@@ -1,0 +1,46 @@
+name: CI Report (Pages)
+
+on:
+  workflow_run:
+    workflows: [ "CI" ]
+    types: [ completed ]
+
+permissions:
+  pages: write
+  id-token: write
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Сгенерировать отчёт
+        run: |
+          mkdir -p public
+          cat > public/index.html << 'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>CI report</title>
+          <h1>Последний запуск CI</h1>
+          <p>Workflow: ${{ github.event.workflow_run.name }}</p>
+          <p>Status: <b>${{ github.event.workflow_run.conclusion }}</b></p>
+          <p>Run: <a href="${{ github.event.workflow_run.html_url }}">ссылка на логи</a></p>
+          HTML
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: report
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
