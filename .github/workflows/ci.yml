@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: write      # пуш/релиз
+  packages: write      # GHCR
+  issues: write        # авто-issue при падении
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Пример: сборка Docker-образа и публикация в GHCR
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .
+          tags: ghcr.io/${{ github.repository }}:latest
+
+      # Сохраните билды/логи как артефакты
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/**
+            logs/**
+          if-no-files-found: ignore
+
+      # (Опционально) загрузите файлы в релиз, если тег
+      - name: Upload to Release (when tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./dist/app.zip
+          asset_name: app.zip
+          asset_content_type: application/zip
+
+      # Короткое резюме в UI Actions
+      - name: Job summary
+        run: |
+          echo "### ✅ Сборка завершена" >> $GITHUB_STEP_SUMMARY
+          echo "- Образ: ghcr.io/${{ github.repository }}:latest" >> $GITHUB_STEP_SUMMARY
+
+  # Авто-issue при падении build (отдельная job на needs)
+  report-fail:
+    if: failure()
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Сохранить краткий отчёт
+        run: |
+          mkdir -p .ci
+          echo "# CI упал" > .ci/failure.md
+          echo "Коммит: $GITHUB_SHA" >> .ci/failure.md
+          echo "См. логи в Actions" >> .ci/failure.md
+      - name: Создать Issue с отчётом
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "CI failed: ${{ github.sha }}"
+          content-filepath: .ci/failure.md
+          labels: |
+            ci
+            automated
