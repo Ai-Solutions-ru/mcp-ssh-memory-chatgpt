@@ -10,7 +10,10 @@
    - `COOLIFY_API_TOKEN` (из *Keys & Tokens → API tokens* вашей инсталляции)
    - `PROJECT_UUID`, `SERVER_UUID` (или `DESTINATION_UUID`)
    - `BASE_DOMAIN` (напр. `mcp.example.com`)
+   - `FACTORY_FQDN` или `FACTORY_BASE_URL` (например, `factory.mcp.example.com`)
 3) Повесьте FQDN на этот сервис (например, `factory.mcp.example.com`).
+   Этот адрес будет использоваться для отдачи конфигураций `mcp-proxy` по пути
+   `/configs/{configId}.json?token=...`.
 
 ## API
 - `GET /health` — проверка живости.
@@ -30,7 +33,7 @@
     "token": "tok_xxx",
     "fqdn": "alice.mcp.example.com",
     "sseUrl": "https://alice.mcp.example.com/sse",
-    "messageUrl": "https://alice.mcp.example.com/message",
+    "messageUrl": "https://alice.mcp.example.com/mcp",
     "coolify": { "uuid": "..." }
   }
   ```
