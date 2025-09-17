@@ -4,6 +4,8 @@ services:
   factory:
     build:
       context: .
+    volumes:
+      - factory-data:/data
     environment:
       COOLIFY_API_URL: ${COOLIFY_API_URL}
       COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN}
@@ -13,6 +15,8 @@ services:
       # DESTINATION_UUID: ${DESTINATION_UUID}
       BASE_DOMAIN: ${BASE_DOMAIN}
       ENVIRONMENT_NAME: ${ENVIRONMENT_NAME:-production}
+      FACTORY_FQDN: ${FACTORY_FQDN}
+      # FACTORY_BASE_URL: ${FACTORY_BASE_URL}
     labels:
       - traefik.enable=true
       - traefik.http.routers.factory.rule=Host(`${FACTORY_FQDN}`)
@@ -20,3 +24,6 @@ services:
       - traefik.http.routers.factory.tls.certresolver=letsencrypt
       - traefik.http.services.factory.loadbalancer.server.port=8080
     restart: unless-stopped
+
+volumes:
+  factory-data:
